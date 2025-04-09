@@ -326,7 +326,7 @@ const PostGenerator = () => {
 
       {/* Result Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="max-w-xl w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Dein generierter Social Media Post</DialogTitle>
             <DialogDescription>
