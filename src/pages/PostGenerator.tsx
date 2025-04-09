@@ -30,6 +30,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import Logo from "@/components/Logo";
 
 // Schema for form validation
@@ -37,6 +38,7 @@ const formSchema = z.object({
   profilurl: z.string().min(1, { message: "Profil URL ist erforderlich" }),
   postThema: z.string().min(1, { message: "Post Thema ist erforderlich" }),
   details: z.string().optional(),
+  generateImage: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -45,6 +47,7 @@ const PostGenerator = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPost, setGeneratedPost] = useState<string | null>(null);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   
   // Initialize form
@@ -54,6 +57,7 @@ const PostGenerator = () => {
       profilurl: "",
       postThema: "",
       details: "",
+      generateImage: false,
     },
   });
 
@@ -92,6 +96,7 @@ const PostGenerator = () => {
     }
 
     setIsLoading(true);
+    setGeneratedImageUrl(null); // Reset image URL on new submission
 
     const platform = platforms.find(p => p.id === selectedPlatform);
     
@@ -102,24 +107,34 @@ const PostGenerator = () => {
     }
 
     try {
+      // Prepare payload - only include generateImage if it's true
+      const payload = {
+        profilurl: data.profilurl,
+        postThema: data.postThema,
+        details: data.details || "",
+        ...(data.generateImage ? { generateImage: true } : {})
+      };
+
       const response = await fetch(platform.webhook, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          profilurl: data.profilurl,
-          postThema: data.postThema,
-          details: data.details || "",
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
 
-      const result = await response.text();
-      setGeneratedPost(result);
+      const result = await response.json();
+      setGeneratedPost(result.postText || result);
+      
+      // Handle image if available
+      if (result.imageGenerated === true && result.imageUrl) {
+        setGeneratedImageUrl(result.imageUrl);
+      }
+
       setDialogOpen(true);
       
       // Reset form
@@ -233,6 +248,30 @@ const PostGenerator = () => {
                 )}
               />
 
+              {/* Generate Image Checkbox */}
+              <FormField
+                control={form.control}
+                name="generateImage"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Soll ein Foto für den Post generiert werden?
+                      </FormLabel>
+                      <FormDescription>
+                        Eine passende Grafik wird automatisch erstellt und mit deinem Post angezeigt.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
               {/* Submit Button */}
               <div className="flex justify-center">
                 <Button 
@@ -268,6 +307,18 @@ const PostGenerator = () => {
           <div className="p-4 bg-secondary/50 rounded-md whitespace-pre-wrap">
             {generatedPost}
           </div>
+          
+          {/* Display image if available */}
+          {generatedImageUrl && (
+            <div className="mt-4">
+              <img 
+                src={generatedImageUrl} 
+                alt="Generated post image" 
+                className="max-w-full h-auto rounded-md object-cover" 
+              />
+            </div>
+          )}
+          
           <div className="flex justify-end gap-4">
             <Button 
               variant="outline" 
@@ -277,7 +328,8 @@ const PostGenerator = () => {
             </Button>
             <Button
               onClick={() => {
-                navigator.clipboard.writeText(generatedPost || "");
+                const contentToCopy = generatedPost || "";
+                navigator.clipboard.writeText(contentToCopy);
                 toast.success("Post in die Zwischenablage kopiert!");
               }}
             >
