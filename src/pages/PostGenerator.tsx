@@ -319,13 +319,13 @@ const PostGenerator = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex mt-4 gap-6 min-w-[700px]">
-            <div className="flex-grow p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto max-h-[70vh]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 overflow-hidden">
+            <div className="md:col-span-2 p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto max-h-[70vh]">
               {generatedPost}
             </div>
 
             {generatedImageUrl && (
-              <div className="w-[280px] flex flex-col justify-start items-center gap-4">
+              <div className="flex flex-col justify-start items-center gap-4">
                 <img
                   src={generatedImageUrl}
                   alt="Generated post image"
