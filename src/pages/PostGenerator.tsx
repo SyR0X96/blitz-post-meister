@@ -127,12 +127,41 @@ const PostGenerator = () => {
         throw new Error(`Error: ${response.status}`);
       }
 
-      const result = await response.json();
-      setGeneratedPost(result.postText || result);
+      // Parse the response, which might be complex JSON with nested data
+      const rawResponse = await response.json();
+      
+      // Handle various response formats
+      let extractedText = "";
+      let imageUrl = null;
+      let imageGenerated = false;
+      
+      console.log("Raw webhook response:", rawResponse);
+      
+      // Try to handle the nested response structure we received
+      if (Array.isArray(rawResponse) && rawResponse.length > 0) {
+        const responseItem = rawResponse[0];
+        
+        if (responseItem.message?.content?.result) {
+          // Extract text from the nested structure
+          extractedText = responseItem.message.content.result;
+          imageGenerated = responseItem.message.content.imageGenerated || false;
+          imageUrl = responseItem.message.content.imageUrl || null;
+        } 
+      } else if (typeof rawResponse === 'object') {
+        // Try direct access for simpler responses
+        extractedText = rawResponse.postText || rawResponse.result || JSON.stringify(rawResponse);
+        imageGenerated = rawResponse.imageGenerated || false;
+        imageUrl = rawResponse.imageUrl || null;
+      } else {
+        // Fallback for plain text
+        extractedText = String(rawResponse);
+      }
+      
+      setGeneratedPost(extractedText);
       
       // Handle image if available
-      if (result.imageGenerated === true && result.imageUrl) {
-        setGeneratedImageUrl(result.imageUrl);
+      if (imageGenerated && imageUrl) {
+        setGeneratedImageUrl(imageUrl);
       }
 
       setDialogOpen(true);
