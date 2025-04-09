@@ -333,7 +333,7 @@ const PostGenerator = () => {
               Hier ist dein fertiger Post für {selectedPlatform && platforms.find(p => p.id === selectedPlatform)?.name}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-4 bg-secondary/50 rounded-md whitespace-pre-wrap">
+          <div className="p-4 bg-secondary/50 rounded-md whitespace-pre-wrap max-h-[50vh] overflow-y-auto">
             {generatedPost}
           </div>
           
