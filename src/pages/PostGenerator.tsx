@@ -310,50 +310,53 @@ const PostGenerator = () => {
         </div>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>Dein generierter Social Media Post</DialogTitle>
-            <DialogDescription>
-              Hier ist dein fertiger Post für {selectedPlatform && platforms.find(p => p.id === selectedPlatform)?.name}
-            </DialogDescription>
-          </DialogHeader>
+      
+<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+  <DialogContent className="max-w-4xl w-full max-h-[90vh]">
+    <DialogHeader>
+      <DialogTitle>Dein generierter Social Media Post</DialogTitle>
+      <DialogDescription>
+        Hier ist dein fertiger Post für {selectedPlatform && platforms.find(p => p.id === selectedPlatform)?.name}
+      </DialogDescription>
+    </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 overflow-hidden">
-            <div className="md:col-span-2 p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto max-h-[70vh]">
-              {generatedPost}
-            </div>
+    <div className="flex flex-row mt-4 overflow-hidden" style={{ display: "flex", flexDirection: "row" }}>
+      <div className="w-2/3 p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto max-h-[70vh]" style={{ width: "65%", marginRight: "20px" }}>
+        {generatedPost}
+      </div>
 
-            {generatedImageUrl && (
-              <div className="flex flex-col justify-start items-center gap-4">
-                <img
-                  src={generatedImageUrl}
-                  alt="Generated post image"
-                  className="rounded-md w-full h-auto object-cover"
-                />
-                <Button onClick={handleDownloadImage} variant="secondary">
-                  Download Bild
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-4 mt-6">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Schließen
-            </Button>
-            <Button
-              onClick={() => {
-                const contentToCopy = generatedPost || "";
-                navigator.clipboard.writeText(contentToCopy);
-                toast.success("Post in die Zwischenablage kopiert!");
-              }}
-            >
-              Kopieren
+      {generatedImageUrl && (
+        <div className="w-1/3" style={{ width: "30%" }}>
+          <div className="flex flex-col justify-start items-center gap-4">
+            <img
+              src={generatedImageUrl}
+              alt="Generated post image"
+              className="rounded-md w-full h-auto object-cover"
+            />
+            <Button onClick={handleDownloadImage} variant="secondary">
+              Download Bild
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
+    </div>
+
+    <div className="flex justify-end gap-4 mt-6">
+      <Button variant="outline" onClick={() => setDialogOpen(false)}>
+        Schließen
+      </Button>
+      <Button
+        onClick={() => {
+          const contentToCopy = generatedPost || "";
+          navigator.clipboard.writeText(contentToCopy);
+          toast.success("Post in die Zwischenablage kopiert!");
+        }}
+      >
+        Kopieren
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
     </div>
   );
 };
