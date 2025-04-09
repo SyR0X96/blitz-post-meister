@@ -167,6 +167,14 @@ const PostGenerator = () => {
     }
   };
 
+  const handleDownloadImage = () => {
+    if (!generatedImageUrl) return;
+    const link = document.createElement("a");
+    link.href = generatedImageUrl;
+    link.download = "social-media-image.jpg";
+    link.click();
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-12">
@@ -302,9 +310,8 @@ const PostGenerator = () => {
         </div>
       </div>
 
-      {/* Ergebnis-Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-full max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Dein generierter Social Media Post</DialogTitle>
             <DialogDescription>
@@ -318,12 +325,15 @@ const PostGenerator = () => {
             </div>
 
             {generatedImageUrl && (
-              <div className="md:w-1/2 flex justify-center items-start">
+              <div className="md:w-1/2 flex flex-col justify-start items-center gap-4">
                 <img
                   src={generatedImageUrl}
                   alt="Generated post image"
                   className="rounded-md max-w-full h-auto object-cover"
                 />
+                <Button onClick={handleDownloadImage} variant="secondary">
+                  Download Bild
+                </Button>
               </div>
             )}
           </div>
