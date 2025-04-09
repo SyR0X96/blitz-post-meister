@@ -312,7 +312,7 @@ const PostGenerator = () => {
 
       
 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-  <DialogContent className="max-w-4xl w-full max-h-[90vh]">
+  <DialogContent className="max-w-4xl w-full max-h-[90vh] relative">
     <DialogHeader>
       <DialogTitle>Dein generierter Social Media Post</DialogTitle>
       <DialogDescription>
@@ -320,32 +320,49 @@ const PostGenerator = () => {
       </DialogDescription>
     </DialogHeader>
 
-    <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "separate", borderSpacing: "10px 0" }}>
-      <tbody>
-        <tr>
-          <td style={{ width: "65%", verticalAlign: "top" }}>
-            <div className="p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto" style={{ maxHeight: "70vh" }}>
-              {generatedPost}
-            </div>
-          </td>
-          
-          {generatedImageUrl && (
-            <td style={{ width: "35%", verticalAlign: "top" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-                <img
-                  src={generatedImageUrl}
-                  alt="Generated post image"
-                  style={{ width: "100%", height: "auto", borderRadius: "6px", objectFit: "cover" }}
-                />
-                <Button onClick={handleDownloadImage} variant="secondary">
-                  Download Bild
-                </Button>
-              </div>
-            </td>
-          )}
-        </tr>
-      </tbody>
-    </table>
+    <div style={{ position: "relative", minHeight: "400px", marginTop: "20px" }}>
+      <div 
+        style={{ 
+          position: generatedImageUrl ? "absolute" : "relative", 
+          left: 0, 
+          top: 0, 
+          width: generatedImageUrl ? "60%" : "100%", 
+          height: "100%", 
+          padding: "16px", 
+          background: "rgba(229, 231, 235, 0.5)", 
+          borderRadius: "6px",
+          overflowY: "auto",
+          maxHeight: "70vh",
+          whiteSpace: "pre-wrap" 
+        }}
+      >
+        {generatedPost}
+      </div>
+
+      {generatedImageUrl && (
+        <div 
+          style={{ 
+            position: "absolute", 
+            right: 0, 
+            top: 0, 
+            width: "35%", 
+            display: "flex", 
+            flexDirection: "column", 
+            alignItems: "center", 
+            gap: "16px" 
+          }}
+        >
+          <img
+            src={generatedImageUrl}
+            alt="Generated post image"
+            style={{ width: "100%", height: "auto", borderRadius: "6px", objectFit: "cover" }}
+          />
+          <Button onClick={handleDownloadImage} variant="secondary">
+            Download Bild
+          </Button>
+        </div>
+      )}
+    </div>
 
     <div className="flex justify-end gap-4 mt-6">
       <Button variant="outline" onClick={() => setDialogOpen(false)}>
