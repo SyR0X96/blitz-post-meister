@@ -3,8 +3,11 @@ import React from "react";
 import Button from "./Button";
 import Logo from "./Logo";
 import SocialIcons from "./SocialIcons";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen flex flex-col justify-center items-center px-4 py-16">
       {/* Background with subtle gradient */}
@@ -27,7 +30,7 @@ const HeroSection: React.FC = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-          <Button size="lg">Jetzt Post schreiben</Button>
+          <Button size="lg" onClick={() => navigate('/post-generator')}>Jetzt Post schreiben</Button>
           <Button variant="secondary" size="lg">Mehr erfahren</Button>
         </div>
 
