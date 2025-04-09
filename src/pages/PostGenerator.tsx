@@ -320,26 +320,32 @@ const PostGenerator = () => {
       </DialogDescription>
     </DialogHeader>
 
-    <div className="flex flex-row mt-4 overflow-hidden" style={{ display: "flex", flexDirection: "row" }}>
-      <div className="w-2/3 p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto max-h-[70vh]" style={{ width: "65%", marginRight: "20px" }}>
-        {generatedPost}
-      </div>
-
-      {generatedImageUrl && (
-        <div className="w-1/3" style={{ width: "30%" }}>
-          <div className="flex flex-col justify-start items-center gap-4">
-            <img
-              src={generatedImageUrl}
-              alt="Generated post image"
-              className="rounded-md w-full h-auto object-cover"
-            />
-            <Button onClick={handleDownloadImage} variant="secondary">
-              Download Bild
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
+    <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "separate", borderSpacing: "10px 0" }}>
+      <tbody>
+        <tr>
+          <td style={{ width: "65%", verticalAlign: "top" }}>
+            <div className="p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto" style={{ maxHeight: "70vh" }}>
+              {generatedPost}
+            </div>
+          </td>
+          
+          {generatedImageUrl && (
+            <td style={{ width: "35%", verticalAlign: "top" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+                <img
+                  src={generatedImageUrl}
+                  alt="Generated post image"
+                  style={{ width: "100%", height: "auto", borderRadius: "6px", objectFit: "cover" }}
+                />
+                <Button onClick={handleDownloadImage} variant="secondary">
+                  Download Bild
+                </Button>
+              </div>
+            </td>
+          )}
+        </tr>
+      </tbody>
+    </table>
 
     <div className="flex justify-end gap-4 mt-6">
       <Button variant="outline" onClick={() => setDialogOpen(false)}>
