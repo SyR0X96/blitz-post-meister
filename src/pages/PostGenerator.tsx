@@ -394,7 +394,18 @@ const PostGenerator = () => {
         Kopieren
       </Button>
       {generatedImageUrl && (
-        <Button onClick={handleDownloadImage} variant="secondary">
+        <Button 
+          onClick={() => {
+            // Create a proper download link
+            const link = document.createElement("a");
+            link.href = generatedImageUrl;
+            link.download = "social-media-image.jpg"; // Set the filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }} 
+          variant="secondary"
+        >
           Download Bild
         </Button>
       )}
