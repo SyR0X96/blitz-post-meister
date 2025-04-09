@@ -331,26 +331,38 @@ const PostGenerator = () => {
                   margin: 0;
                   padding: 0;
                   font-family: sans-serif;
+                  overflow: hidden;
                 }
                 .container {
-                  display: flex;
+                  display: table;
                   width: 100%;
-                  max-height: 70vh;
+                  table-layout: fixed;
+                  border-spacing: 0;
                 }
-                .text-area {
+                .row {
+                  display: table-row;
+                }
+                .text-cell {
+                  display: table-cell;
                   width: 65%;
                   padding: 16px;
                   background-color: rgba(229, 231, 235, 0.5);
                   border-radius: 6px;
-                  margin-right: 20px;
+                  vertical-align: top;
+                }
+                .image-cell {
+                  display: table-cell;
+                  width: 35%;
+                  padding-left: 20px;
+                  vertical-align: top;
+                }
+                .text-content {
                   overflow-y: auto;
+                  max-height: 70vh;
                   white-space: pre-wrap;
                 }
-                .image-area {
-                  width: 30%;
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
+                .image-content {
+                  text-align: center;
                 }
                 .image {
                   width: 100%;
@@ -361,12 +373,18 @@ const PostGenerator = () => {
             </head>
             <body>
               <div class="container">
-                <div class="text-area">${generatedPost || ''}</div>
-                ${generatedImageUrl ? `
-                <div class="image-area">
-                  <img src="${generatedImageUrl}" class="image" alt="Generated post image" />
+                <div class="row">
+                  <div class="text-cell">
+                    <div class="text-content">${generatedPost || ''}</div>
+                  </div>
+                  ${generatedImageUrl ? `
+                  <div class="image-cell">
+                    <div class="image-content">
+                      <img src="${generatedImageUrl}" class="image" alt="Generated post image" />
+                    </div>
+                  </div>
+                  ` : ''}
                 </div>
-                ` : ''}
               </div>
             </body>
           </html>
@@ -374,8 +392,7 @@ const PostGenerator = () => {
         style={{ 
           width: "100%", 
           height: "500px", 
-          border: "none", 
-          overflow: "auto" 
+          border: "none" 
         }}
       />
     </div>
@@ -396,10 +413,9 @@ const PostGenerator = () => {
       {generatedImageUrl && (
         <Button 
           onClick={() => {
-            // Create a proper download link
             const link = document.createElement("a");
             link.href = generatedImageUrl;
-            link.download = "social-media-image.jpg"; // Set the filename
+            link.download = "social-media-image.jpg";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
