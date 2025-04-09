@@ -1,16 +1,15 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { 
-  Facebook, 
-  Instagram, 
-  Linkedin, 
-  Twitter, 
-  Loader2 
+import {
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Loader2,
 } from "lucide-react";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -33,7 +32,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import Logo from "@/components/Logo";
 
-// Schema for form validation
 const formSchema = z.object({
   profilurl: z.string().min(1, { message: "Profil URL ist erforderlich" }),
   postThema: z.string().min(1, { message: "Post Thema ist erforderlich" }),
@@ -49,8 +47,7 @@ const PostGenerator = () => {
   const [generatedPost, setGeneratedPost] = useState<string | null>(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  
-  // Initialize form
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -61,32 +58,35 @@ const PostGenerator = () => {
     },
   });
 
-  // Platform selection options with their webhooks
   const platforms = [
     {
       id: "linkedin",
       name: "LinkedIn",
       icon: <Linkedin className="h-6 w-6" />,
-      webhook: "https://grevenmedien.app.n8n.cloud/webhook/b81511aa-f625-46e5-9f73-5d3e80ed5e02"
+      webhook:
+        "https://grevenmedien.app.n8n.cloud/webhook/b81511aa-f625-46e5-9f73-5d3e80ed5e02",
     },
     {
       id: "instagram",
       name: "Instagram",
       icon: <Instagram className="h-6 w-6" />,
-      webhook: "https://grevenmedien.app.n8n.cloud/webhook/e831624b-e624-43de-bdf2-2da7db8a049c"
+      webhook:
+        "https://grevenmedien.app.n8n.cloud/webhook/e831624b-e624-43de-bdf2-2da7db8a049c",
     },
     {
       id: "twitter",
       name: "X (Twitter)",
       icon: <Twitter className="h-6 w-6" />,
-      webhook: "https://grevenmedien.app.n8n.cloud/webhook/56235c2f-4b09-4250-8232-a2b07e956904"
+      webhook:
+        "https://grevenmedien.app.n8n.cloud/webhook/56235c2f-4b09-4250-8232-a2b07e956904",
     },
     {
       id: "facebook",
       name: "Facebook",
       icon: <Facebook className="h-6 w-6" />,
-      webhook: "https://grevenmedien.app.n8n.cloud/webhook/ee8e17dc-dafa-4327-8f53-cf96b09e128a"
-    }
+      webhook:
+        "https://grevenmedien.app.n8n.cloud/webhook/ee8e17dc-dafa-4327-8f53-cf96b09e128a",
+    },
   ];
 
   const onSubmit = async (data: FormValues) => {
@@ -96,10 +96,10 @@ const PostGenerator = () => {
     }
 
     setIsLoading(true);
-    setGeneratedImageUrl(null); // Reset image URL on new submission
+    setGeneratedImageUrl(null);
 
-    const platform = platforms.find(p => p.id === selectedPlatform);
-    
+    const platform = platforms.find((p) => p.id === selectedPlatform);
+
     if (!platform) {
       toast.error("Ungültige Plattform ausgewählt");
       setIsLoading(false);
@@ -107,12 +107,11 @@ const PostGenerator = () => {
     }
 
     try {
-      // Prepare payload - only include generateImage if it's true
       const payload = {
         profilurl: data.profilurl,
         postThema: data.postThema,
         details: data.details || "",
-        ...(data.generateImage ? { generateImage: true } : {})
+        ...(data.generateImage ? { generateImage: true } : {}),
       };
 
       const response = await fetch(platform.webhook, {
@@ -127,49 +126,39 @@ const PostGenerator = () => {
         throw new Error(`Error: ${response.status}`);
       }
 
-      // Parse the response, which might be complex JSON with nested data
       const rawResponse = await response.json();
-      
-      // Handle various response formats
       let extractedText = "";
       let imageUrl = null;
       let imageGenerated = false;
-      
+
       console.log("Raw webhook response:", rawResponse);
-      
-      // Try to handle the nested response structure we received
+
       if (Array.isArray(rawResponse) && rawResponse.length > 0) {
         const responseItem = rawResponse[0];
-        
+
         if (responseItem.message?.content?.result) {
-          // Extract text from the nested structure
           extractedText = responseItem.message.content.result;
           imageGenerated = responseItem.message.content.imageGenerated || false;
           imageUrl = responseItem.message.content.imageUrl || null;
-        } 
-      } else if (typeof rawResponse === 'object') {
-        // Try direct access for simpler responses
-        extractedText = rawResponse.postText || rawResponse.result || JSON.stringify(rawResponse);
+        }
+      } else if (typeof rawResponse === "object") {
+        extractedText =
+          rawResponse.postText || rawResponse.result || JSON.stringify(rawResponse);
         imageGenerated = rawResponse.imageGenerated || false;
         imageUrl = rawResponse.imageUrl || null;
       } else {
-        // Fallback for plain text
         extractedText = String(rawResponse);
       }
-      
+
       setGeneratedPost(extractedText);
-      
-      // Handle image if available
+
       if (imageGenerated && imageUrl) {
         setGeneratedImageUrl(imageUrl);
       }
 
       setDialogOpen(true);
-      
-      // Reset form
       form.reset();
       setSelectedPlatform(null);
-      
     } catch (error) {
       console.error("Error generating post:", error);
       toast.error("Fehler beim Generieren des Posts. Bitte versuche es erneut.");
@@ -181,11 +170,10 @@ const PostGenerator = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-12">
-        {/* Header */}
         <div className="flex justify-center mb-10">
           <Logo className="text-3xl" />
         </div>
-        
+
         <div className="max-w-3xl mx-auto glass-card p-8 rounded-xl">
           <h1 className="text-3xl font-bold mb-6 text-center">
             Social Media Post Generator
@@ -196,11 +184,8 @@ const PostGenerator = () => {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {/* Platform Selection */}
               <div className="space-y-4">
-                <label className="text-sm font-medium">
-                  Plattform wählen
-                </label>
+                <label className="text-sm font-medium">Plattform wählen</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {platforms.map((platform) => (
                     <div
@@ -219,7 +204,6 @@ const PostGenerator = () => {
                 </div>
               </div>
 
-              {/* Profile URL */}
               <FormField
                 control={form.control}
                 name="profilurl"
@@ -237,7 +221,6 @@ const PostGenerator = () => {
                 )}
               />
 
-              {/* Post Topic */}
               <FormField
                 control={form.control}
                 name="postThema"
@@ -255,7 +238,6 @@ const PostGenerator = () => {
                 )}
               />
 
-              {/* Additional Details */}
               <FormField
                 control={form.control}
                 name="details"
@@ -263,10 +245,10 @@ const PostGenerator = () => {
                   <FormItem>
                     <FormLabel>Zusätzliche Details (optional)</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Weitere Informationen oder spezielle Call-to-Actions" 
+                      <Textarea
+                        placeholder="Weitere Informationen oder spezielle Call-to-Actions"
                         className="min-h-[120px]"
-                        {...field} 
+                        {...field}
                       />
                     </FormControl>
                     <FormDescription>
@@ -277,7 +259,6 @@ const PostGenerator = () => {
                 )}
               />
 
-              {/* Generate Image Checkbox */}
               <FormField
                 control={form.control}
                 name="generateImage"
@@ -290,9 +271,7 @@ const PostGenerator = () => {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Soll ein Foto für den Post generiert werden?
-                      </FormLabel>
+                      <FormLabel>Bild generieren?</FormLabel>
                       <FormDescription>
                         Eine passende Grafik wird automatisch erstellt und mit deinem Post angezeigt.
                       </FormDescription>
@@ -301,10 +280,9 @@ const PostGenerator = () => {
                 )}
               />
 
-              {/* Submit Button */}
               <div className="flex justify-center">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   size="lg"
                   disabled={isLoading}
                   className="bg-orange-500 hover:bg-orange-600 text-white"
@@ -324,35 +302,34 @@ const PostGenerator = () => {
         </div>
       </div>
 
-      {/* Result Dialog */}
+      {/* Ergebnis-Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-xl w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Dein generierter Social Media Post</DialogTitle>
             <DialogDescription>
               Hier ist dein fertiger Post für {selectedPlatform && platforms.find(p => p.id === selectedPlatform)?.name}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-4 bg-secondary/50 rounded-md whitespace-pre-wrap max-h-[50vh] overflow-y-auto">
-            {generatedPost}
-          </div>
-          
-          {/* Display image if available */}
-          {generatedImageUrl && (
-            <div className="mt-4">
-              <img 
-                src={generatedImageUrl} 
-                alt="Generated post image" 
-                className="max-w-full h-auto rounded-md object-cover" 
-              />
+
+          <div className="flex flex-col md:flex-row gap-6 mt-4">
+            <div className="flex-1 p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto max-h-[70vh]">
+              {generatedPost}
             </div>
-          )}
-          
-          <div className="flex justify-end gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setDialogOpen(false)}
-            >
+
+            {generatedImageUrl && (
+              <div className="md:w-1/2 flex justify-center items-start">
+                <img
+                  src={generatedImageUrl}
+                  alt="Generated post image"
+                  className="rounded-md max-w-full h-auto object-cover"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-4 mt-6">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Schließen
             </Button>
             <Button
