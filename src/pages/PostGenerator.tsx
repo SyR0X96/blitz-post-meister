@@ -319,17 +319,17 @@ const PostGenerator = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-row gap-6 mt-4 flex-wrap">
+          <div className="flex flex-row gap-6 mt-4 overflow-hidden">
             <div className="flex-1 p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto max-h-[70vh]">
               {generatedPost}
             </div>
 
             {generatedImageUrl && (
-              <div className="md:w-1/2 flex flex-col justify-start items-center gap-4">
+              <div className="w-[300px] flex flex-col justify-start items-center gap-4 shrink-0">
                 <img
                   src={generatedImageUrl}
                   alt="Generated post image"
-                  className="rounded-md max-w-full h-auto object-cover"
+                  className="rounded-md w-full h-auto object-cover"
                 />
                 <Button onClick={handleDownloadImage} variant="secondary">
                   Download Bild
