@@ -209,12 +209,12 @@ const PostGenerator = () => {
                 name="profilurl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Profil URL</FormLabel>
+                    <FormLabel>Webseiten URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://www.linkedin.com/in/username" {...field} />
+                      <Input placeholder="www.beispieldomain.de" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Deine Profil-URL auf der ausgewählten Plattform
+                      URL wo Infos zum Post vorhanden sind
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -312,7 +312,7 @@ const PostGenerator = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col md:flex-row gap-6 mt-4">
+          <div className="flex flex-row gap-6 mt-4 flex-wrap">
             <div className="flex-1 p-4 bg-secondary/50 rounded-md whitespace-pre-wrap overflow-y-auto max-h-[70vh]">
               {generatedPost}
             </div>
