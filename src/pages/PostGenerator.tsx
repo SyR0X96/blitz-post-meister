@@ -8,6 +8,7 @@ import {
   Linkedin,
   Twitter,
   Loader2,
+  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -172,7 +173,9 @@ const PostGenerator = () => {
     const link = document.createElement("a");
     link.href = generatedImageUrl;
     link.download = "social-media-image.jpg";
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -310,124 +313,56 @@ const PostGenerator = () => {
         </div>
       </div>
 
-      
-<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-  <DialogContent className="max-w-4xl w-full max-h-[90vh]">
-    <DialogHeader>
-      <DialogTitle>Dein generierter Social Media Post</DialogTitle>
-      <DialogDescription>
-        Hier ist dein fertiger Post für {selectedPlatform && platforms.find(p => p.id === selectedPlatform)?.name}
-      </DialogDescription>
-    </DialogHeader>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-5xl w-full max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Dein generierter Social Media Post</DialogTitle>
+            <DialogDescription>
+              Hier ist dein fertiger Post für {selectedPlatform && platforms.find(p => p.id === selectedPlatform)?.name}
+            </DialogDescription>
+          </DialogHeader>
 
-    <div>
-      <iframe 
-        srcDoc={`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <style>
-                body {
-                  margin: 0;
-                  padding: 0;
-                  font-family: sans-serif;
-                  overflow: hidden;
-                }
-                .container {
-                  display: table;
-                  width: 100%;
-                  table-layout: fixed;
-                  border-spacing: 0;
-                }
-                .row {
-                  display: table-row;
-                }
-                .text-cell {
-                  display: table-cell;
-                  width: 65%;
-                  padding: 16px;
-                  background-color: rgba(229, 231, 235, 0.5);
-                  border-radius: 6px;
-                  vertical-align: top;
-                }
-                .image-cell {
-                  display: table-cell;
-                  width: 35%;
-                  padding-left: 20px;
-                  vertical-align: top;
-                }
-                .text-content {
-                  overflow-y: auto;
-                  max-height: 70vh;
-                  white-space: pre-wrap;
-                }
-                .image-content {
-                  text-align: center;
-                }
-                .image {
-                  width: 100%;
-                  border-radius: 6px;
-                  object-fit: cover;
-                }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="row">
-                  <div class="text-cell">
-                    <div class="text-content">${generatedPost || ''}</div>
-                  </div>
-                  ${generatedImageUrl ? `
-                  <div class="image-cell">
-                    <div class="image-content">
-                      <img src="${generatedImageUrl}" class="image" alt="Generated post image" />
-                    </div>
-                  </div>
-                  ` : ''}
-                </div>
+          <div className="flex flex-col md:flex-row gap-6 mt-4 max-h-[60vh] overflow-auto">
+            <div className="flex-1 bg-secondary/10 p-4 rounded-md overflow-y-auto">
+              <p className="whitespace-pre-wrap">{generatedPost || ""}</p>
+            </div>
+
+            {generatedImageUrl && (
+              <div className="md:w-2/5 flex flex-col items-center justify-start">
+                <img 
+                  src={generatedImageUrl} 
+                  alt="Generated post image" 
+                  className="w-full h-auto rounded-md object-contain max-h-[50vh]" 
+                />
               </div>
-            </body>
-          </html>
-        `}
-        style={{ 
-          width: "100%", 
-          height: "500px", 
-          border: "none" 
-        }}
-      />
-    </div>
+            )}
+          </div>
 
-    <div className="flex justify-end gap-4 mt-6">
-      <Button variant="outline" onClick={() => setDialogOpen(false)}>
-        Schließen
-      </Button>
-      <Button
-        onClick={() => {
-          const contentToCopy = generatedPost || "";
-          navigator.clipboard.writeText(contentToCopy);
-          toast.success("Post in die Zwischenablage kopiert!");
-        }}
-      >
-        Kopieren
-      </Button>
-      {generatedImageUrl && (
-        <Button 
-          onClick={() => {
-            const link = document.createElement("a");
-            link.href = generatedImageUrl;
-            link.download = "social-media-image.jpg";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }} 
-          variant="secondary"
-        >
-          Download Bild
-        </Button>
-      )}
-    </div>
-  </DialogContent>
-</Dialog>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Schließen
+            </Button>
+            {generatedImageUrl && (
+              <Button 
+                onClick={handleDownloadImage} 
+                variant="secondary"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download Bild
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                const contentToCopy = generatedPost || "";
+                navigator.clipboard.writeText(contentToCopy);
+                toast.success("Post in die Zwischenablage kopiert!");
+              }}
+            >
+              Kopieren
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
