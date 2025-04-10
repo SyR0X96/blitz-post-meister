@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -172,10 +171,9 @@ const PostGenerator = () => {
   const handleDownloadImage = () => {
     if (!generatedImageUrl) return;
     
-    // Create a temporary anchor element
     const link = document.createElement("a");
     link.href = generatedImageUrl;
-    link.download = `social-media-${selectedPlatform}-image.jpg`;
+    link.setAttribute("download", `social-media-${selectedPlatform}-image.jpg`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
