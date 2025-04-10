@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -170,12 +171,16 @@ const PostGenerator = () => {
 
   const handleDownloadImage = () => {
     if (!generatedImageUrl) return;
+    
+    // Create a temporary anchor element
     const link = document.createElement("a");
     link.href = generatedImageUrl;
-    link.download = "social-media-image.jpg";
+    link.download = `social-media-${selectedPlatform}-image.jpg`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    toast.success("Bild wird heruntergeladen");
   };
 
   return (
@@ -314,7 +319,7 @@ const PostGenerator = () => {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-5xl w-full max-h-[90vh]">
+        <DialogContent className="max-w-6xl w-full h-auto overflow-hidden">
           <DialogHeader>
             <DialogTitle>Dein generierter Social Media Post</DialogTitle>
             <DialogDescription>
@@ -322,13 +327,13 @@ const PostGenerator = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col md:flex-row gap-6 mt-4 max-h-[60vh] overflow-auto">
-            <div className="flex-1 bg-secondary/10 p-4 rounded-md overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 max-h-[60vh] overflow-auto p-2">
+            <div className="bg-secondary/10 p-4 rounded-md overflow-y-auto">
               <p className="whitespace-pre-wrap">{generatedPost || ""}</p>
             </div>
 
             {generatedImageUrl && (
-              <div className="md:w-2/5 flex flex-col items-center justify-start">
+              <div className="flex flex-col items-center justify-start">
                 <img 
                   src={generatedImageUrl} 
                   alt="Generated post image" 
@@ -346,9 +351,10 @@ const PostGenerator = () => {
               <Button 
                 onClick={handleDownloadImage} 
                 variant="secondary"
+                className="flex items-center gap-2"
               >
-                <Download className="mr-2 h-4 w-4" />
-                Download Bild
+                <Download className="h-4 w-4" />
+                Bild herunterladen
               </Button>
             )}
             <Button
