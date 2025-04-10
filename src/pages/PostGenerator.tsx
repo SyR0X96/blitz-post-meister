@@ -171,14 +171,31 @@ const PostGenerator = () => {
   const handleDownloadImage = () => {
     if (!generatedImageUrl) return;
     
-    const link = document.createElement("a");
-    link.href = generatedImageUrl;
-    link.setAttribute("download", `social-media-${selectedPlatform}-image.jpg`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    window.open(generatedImageUrl, '_blank');
     
-    toast.success("Bild wird heruntergeladen");
+    setTimeout(() => {
+      fetch(generatedImageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = `social-media-${selectedPlatform}-image.jpg`;
+          
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+          
+          toast.success("Bild wird heruntergeladen");
+        })
+        .catch(err => {
+          console.error("Download failed:", err);
+          toast.error("Download fehlgeschlagen. Versuchen Sie, das Bild im neuen Tab zu speichern.");
+        });
+    }, 100);
   };
 
   return (
