@@ -62,10 +62,14 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const loadPlans = async () => {
     try {
       setPlansLoading(true);
+      // Using a more generic approach with type assertion
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('*')
-        .order('price', { ascending: true });
+        .order('price', { ascending: true }) as { 
+          data: SubscriptionPlan[] | null; 
+          error: any; 
+        };
       
       if (error) {
         throw error;
