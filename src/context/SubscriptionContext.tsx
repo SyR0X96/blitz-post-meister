@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,20 +61,18 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const loadPlans = async () => {
     try {
       setPlansLoading(true);
-      // Using a more generic approach with type assertion
+      // Use the generic overload of supabase.from() without type constraints
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('*')
-        .order('price', { ascending: true }) as { 
-          data: SubscriptionPlan[] | null; 
-          error: any; 
-        };
+        .order('price', { ascending: true });
       
       if (error) {
         throw error;
       }
       
-      setPlans(data || []);
+      // Type assertion here since we know the structure of the data
+      setPlans((data || []) as SubscriptionPlan[]);
     } catch (error: any) {
       console.error('Error loading plans:', error);
       toast.error('Fehler beim Laden der Abonnementpläne');
