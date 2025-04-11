@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -32,6 +34,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import Logo from "@/components/Logo";
+import { useAuth } from "@/context/AuthContext";
 
 const formSchema = z.object({
   profilurl: z.string().min(1, { message: "Profil URL ist erforderlich" }),
@@ -43,11 +46,21 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const PostGenerator = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedPost, setGeneratedPost] = useState<string | null>(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      toast.error("Bitte melde dich an, um Posts zu generieren");
+      navigate('/');
+    }
+  }, [user, loading, navigate]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -197,6 +210,21 @@ const PostGenerator = () => {
         });
     }, 100);
   };
+  
+  // If loading authentication state, show spinner
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
+        <span className="ml-2">Laden...</span>
+      </div>
+    );
+  }
+
+  // If not authenticated, don't render the component (useEffect will redirect)
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">

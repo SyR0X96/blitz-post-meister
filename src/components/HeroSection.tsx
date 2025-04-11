@@ -1,12 +1,24 @@
 
-import React from "react";
+import React, { useState } from "react";
 import Button from "./Button";
 import Logo from "./Logo";
 import SocialIcons from "./SocialIcons";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import AuthModal from "./AuthModal";
 
 const HeroSection: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handlePostGeneratorClick = () => {
+    if (user) {
+      navigate('/post-generator');
+    } else {
+      setShowAuthModal(true);
+    }
+  };
 
   return (
     <section className="relative min-h-screen flex flex-col justify-center items-center px-4 py-16">
@@ -30,12 +42,19 @@ const HeroSection: React.FC = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-          <Button size="lg" onClick={() => navigate('/post-generator')}>Jetzt Post schreiben</Button>
+          <Button size="lg" onClick={handlePostGeneratorClick}>Jetzt Post schreiben</Button>
           <Button variant="secondary" size="lg">Mehr erfahren</Button>
         </div>
 
         <SocialIcons />
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => navigate('/post-generator')}
+      />
 
       {/* Scroll indicator */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
