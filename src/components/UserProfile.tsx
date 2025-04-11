@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, WifiOff } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   DropdownMenu,
@@ -13,12 +13,22 @@ import { useNavigate } from 'react-router-dom';
 import AuthModal from './AuthModal';
 
 const UserProfile: React.FC = () => {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, connectionError } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const navigate = useNavigate();
 
   if (loading) {
     return <div className="h-9 w-9 rounded-full bg-secondary animate-pulse"></div>;
+  }
+
+  // Show connection error indicator
+  if (connectionError) {
+    return (
+      <Button variant="outline" className="text-destructive flex items-center gap-2">
+        <WifiOff className="h-4 w-4" />
+        <span className="hidden sm:inline">Verbindungsfehler</span>
+      </Button>
+    );
   }
 
   if (!user) {

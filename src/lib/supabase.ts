@@ -7,17 +7,52 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Check if the environment variables are available
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables. Check your environment variables.');
+  console.error('Missing Supabase environment variables. Check your Supabase project settings.');
 }
 
-// Log the Supabase URL and key to debug (will be redacted in production)
-console.log('Supabase URL:', supabaseUrl ? 'URL is defined' : 'URL is undefined');
-console.log('Supabase Key:', supabaseAnonKey ? 'Key is defined' : 'Key is undefined');
+// Create Supabase client with proper error handling
+let supabase;
 
-// Create a fallback URL and key to prevent runtime errors
-// NOTE: In production, these should come from environment variables
-const url = supabaseUrl || 'https://placeholder-supabase-url.com';
-const key = supabaseAnonKey || 'placeholder-anon-key';
+try {
+  if (supabaseUrl && supabaseAnonKey) {
+    // Create the client with the provided credentials
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+    console.log('Supabase client initialized successfully');
+  } else {
+    // For development only - create a mock client that won't cause runtime errors
+    // but will clearly indicate it's not connected to a real Supabase instance
+    console.warn('Using mock Supabase client. Authentication and database features will not work.');
+    
+    // Creating a mock client with placeholder methods to prevent runtime errors
+    supabase = {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signUp: async () => ({ error: new Error('Mock Supabase: Please provide valid credentials') }),
+        signInWithPassword: async () => ({ error: new Error('Mock Supabase: Please provide valid credentials') }),
+        signOut: async () => ({ error: null })
+      }
+    };
+  }
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+  // Provide a fallback mock client
+  supabase = {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signUp: async () => ({ error: new Error('Supabase initialization failed') }),
+      signInWithPassword: async () => ({ error: new Error('Supabase initialization failed') }),
+      signOut: async () => ({ error: null })
+    }
+  };
+}
 
-// Create and export the Supabase client
-export const supabase = createClient(url, key);
+// Export the client
+export { supabase };
