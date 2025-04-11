@@ -11,6 +11,7 @@ import {
   Twitter,
   Loader2,
   Download,
+  AlertCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -33,8 +34,10 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
+import { useSubscription } from "@/context/SubscriptionContext";
 
 const formSchema = z.object({
   profilurl: z.string().min(1, { message: "Profil URL ist erforderlich" }),
@@ -46,7 +49,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const PostGenerator = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { subscription, remainingPosts, refreshSubscription, isSubscribed } = useSubscription();
   const navigate = useNavigate();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,11 +60,18 @@ const PostGenerator = () => {
 
   // Check if user is authenticated
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       toast.error("Bitte melde dich an, um Posts zu generieren");
       navigate('/');
     }
-  }, [user, loading, navigate]);
+  }, [user, authLoading, navigate]);
+
+  // Check if user has a subscription
+  useEffect(() => {
+    if (!authLoading && user && !isSubscribed) {
+      navigate('/subscriptions');
+    }
+  }, [user, authLoading, isSubscribed, navigate]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -106,6 +117,11 @@ const PostGenerator = () => {
   const onSubmit = async (data: FormValues) => {
     if (!selectedPlatform) {
       toast.error("Bitte wähle eine Plattform aus");
+      return;
+    }
+
+    if (remainingPosts <= 0 && remainingPosts !== Infinity) {
+      toast.error("Dein monatliches Kontingent ist aufgebraucht");
       return;
     }
 
@@ -173,6 +189,9 @@ const PostGenerator = () => {
       setDialogOpen(true);
       form.reset();
       setSelectedPlatform(null);
+      
+      // Refresh the subscription to update usage
+      refreshSubscription();
     } catch (error) {
       console.error("Error generating post:", error);
       toast.error("Fehler beim Generieren des Posts. Bitte versuche es erneut.");
@@ -212,7 +231,7 @@ const PostGenerator = () => {
   };
   
   // If loading authentication state, show spinner
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
@@ -222,7 +241,7 @@ const PostGenerator = () => {
   }
 
   // If not authenticated, don't render the component (useEffect will redirect)
-  if (!user) {
+  if (!user || !isSubscribed) {
     return null;
   }
 
@@ -240,6 +259,21 @@ const PostGenerator = () => {
           <p className="text-muted-foreground mb-8 text-center">
             Wähle eine Plattform und gib deine Details ein, um einen professionellen Social Media Post zu generieren.
           </p>
+
+          {/* Subscription Info Alert */}
+          <Alert className="mb-6 bg-orange-500/10 border-orange-500">
+            <AlertTitle className="flex items-center">
+              <AlertCircle className="h-4 w-4 mr-2" /> 
+              Dein aktuelles Abonnement: {subscription?.subscription_plans.name}
+            </AlertTitle>
+            <AlertDescription className="pl-6">
+              {remainingPosts === Infinity ? (
+                <>Du hast unbegrenzte Posts in deinem Plan.</>
+              ) : (
+                <>Du hast noch <span className="font-bold">{remainingPosts}</span> von <span className="font-bold">{subscription?.subscription_plans.monthly_post_limit}</span> Posts in diesem Monat übrig.</>
+              )}
+            </AlertDescription>
+          </Alert>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -343,7 +377,7 @@ const PostGenerator = () => {
                 <Button
                   type="submit"
                   size="lg"
-                  disabled={isLoading}
+                  disabled={isLoading || remainingPosts === 0}
                   className="bg-orange-500 hover:bg-orange-600 text-white"
                 >
                   {isLoading ? (

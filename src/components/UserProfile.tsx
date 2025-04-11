@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { LogOut, User, WifiOff } from 'lucide-react';
+import { LogOut, User, WifiOff, CreditCard } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useSubscription } from '@/context/SubscriptionContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import AuthModal from './AuthModal';
 
 const UserProfile: React.FC = () => {
   const { user, signOut, loading, connectionError } = useAuth();
+  const { subscription } = useSubscription();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const navigate = useNavigate();
 
@@ -72,6 +74,13 @@ const UserProfile: React.FC = () => {
             className="cursor-pointer"
           >
             Post Generator
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => navigate('/subscriptions')}
+            className="cursor-pointer flex items-center"
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            {subscription ? 'Mein Abonnement' : 'Abonnement auswählen'}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={signOut} className="text-destructive cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" /> Abmelden
