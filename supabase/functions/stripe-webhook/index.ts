@@ -60,22 +60,55 @@ serve(async (req) => {
         });
         
         if (session.subscription && session.metadata?.user_id && session.metadata?.plan_id) {
-          // Update user subscription
-          const { error } = await supabase
+          // First check if a record already exists for this user
+          const { data: existingData, error: queryError } = await supabase
             .from("user_subscriptions")
-            .upsert({
-              user_id: session.metadata.user_id,
-              subscription_plan_id: session.metadata.plan_id,
-              status: "active",
-              stripe_customer_id: session.customer,
-              stripe_subscription_id: session.subscription,
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'user_id' });
+            .select("id")
+            .eq("user_id", session.metadata.user_id)
+            .maybeSingle();
+            
+          if (queryError) {
+            logStep("Error checking existing subscription", { error: queryError });
+          }
           
-          if (error) {
-            logStep("Error updating subscription", { error });
+          if (existingData?.id) {
+            // Update existing record
+            const { error } = await supabase
+              .from("user_subscriptions")
+              .update({
+                subscription_plan_id: session.metadata.plan_id,
+                status: "active",
+                stripe_customer_id: session.customer,
+                stripe_subscription_id: session.subscription,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", existingData.id);
+              
+            if (error) {
+              logStep("Error updating subscription", { error });
+            } else {
+              logStep("Subscription updated successfully");
+            }
           } else {
-            logStep("Subscription updated successfully");
+            // Insert new record
+            const { error } = await supabase
+              .from("user_subscriptions")
+              .insert({
+                user_id: session.metadata.user_id,
+                subscription_plan_id: session.metadata.plan_id,
+                status: "active",
+                stripe_customer_id: session.customer,
+                stripe_subscription_id: session.subscription,
+                current_period_start: new Date().toISOString(),
+                current_period_end: new Date().toISOString(), // This will be updated below
+                updated_at: new Date().toISOString(),
+              });
+              
+            if (error) {
+              logStep("Error inserting subscription", { error });
+            } else {
+              logStep("New subscription inserted successfully");
+            }
           }
 
           // Get details of the subscription to set accurate current_period_start/end
@@ -124,7 +157,7 @@ serve(async (req) => {
                   current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
                   updated_at: new Date().toISOString(),
                 })
-                .eq("stripe_subscription_id", invoice.subscription);
+                .eq("user_id", userId);
               
               if (error) {
                 logStep("Error updating subscription after payment", { error });
