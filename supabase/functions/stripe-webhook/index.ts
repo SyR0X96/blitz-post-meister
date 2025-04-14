@@ -32,12 +32,13 @@ serve(async (req) => {
     // Get the raw request body
     const body = await req.text();
     
-    // Verify the event with Stripe
+    // Verify the event with Stripe using the async method
     let event;
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
     
     try {
-      event = stripe.webhooks.constructEvent(
+      // Use constructEventAsync instead of constructEvent
+      event = await stripe.webhooks.constructEventAsync(
         body,
         signature,
         webhookSecret
