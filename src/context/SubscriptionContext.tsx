@@ -62,14 +62,17 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const loadPlans = async () => {
     try {
       setPlansLoading(true);
+      console.log('Loading subscription plans...');
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('id, name, price, monthly_post_limit');
       
       if (error) {
+        console.error('Error loading plans:', error);
         throw error;
       }
       
+      console.log('Plans loaded:', data);
       setPlans(data as SubscriptionPlan[] || []);
     } catch (error: any) {
       console.error('Error loading plans:', error);
@@ -89,23 +92,32 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     try {
       setLoading(true);
+      console.log('Checking subscription status...');
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error checking subscription:', error);
+        throw error;
+      }
+
+      console.log('Subscription check response:', data);
 
       if (data.hasActiveSubscription) {
+        console.log('Active subscription found:', data.subscription);
         setSubscription(data.subscription);
         setUsage(data.usage);
       } else {
+        console.log('No active subscription found');
         setSubscription(null);
         setUsage(data.usage || null);
       }
     } catch (error: any) {
       console.error('Error checking subscription:', error);
+      toast.error('Fehler beim Prüfen des Abonnementstatus');
     } finally {
       setLoading(false);
     }
@@ -118,6 +130,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     try {
+      console.log('Creating checkout for plan:', planId);
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planId },
         headers: {
@@ -125,9 +138,17 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         },
       });
 
-      if (error) throw error;
-      if (!data || !data.url) throw new Error('Keine Checkout-URL erhalten');
+      if (error) {
+        console.error('Error creating checkout:', error);
+        throw error;
+      }
       
+      if (!data || !data.url) {
+        console.error('No checkout URL received');
+        throw new Error('Keine Checkout-URL erhalten');
+      }
+      
+      console.log('Checkout URL created:', data.url);
       return data.url;
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
@@ -137,14 +158,17 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const refreshSubscription = async () => {
+    console.log('Refreshing subscription status...');
     await checkSubscription();
   };
 
   useEffect(() => {
+    console.log('Loading subscription plans on mount');
     loadPlans();
   }, []);
 
   useEffect(() => {
+    console.log('Checking subscription status on auth change', { user: !!user, session: !!session });
     checkSubscription();
   }, [user, session]);
 
