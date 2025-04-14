@@ -70,7 +70,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         throw error;
       }
       
-      setPlans(data || []);
+      setPlans(data as SubscriptionPlan[] || []);
     } catch (error: any) {
       console.error('Error loading plans:', error);
       toast.error('Fehler beim Laden der Abonnementpläne');
