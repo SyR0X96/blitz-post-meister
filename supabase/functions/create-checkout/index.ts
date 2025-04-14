@@ -83,6 +83,17 @@ serve(async (req) => {
     }
     
     logStep("Plan found", { plan: planData });
+    
+    // Verify that we have a valid Stripe price ID
+    if (!planData.stripe_price_id) {
+      logStep("Missing Stripe price ID", { planId: planData.id, name: planData.name });
+      return new Response(
+        JSON.stringify({ error: "Stripe Price ID fehlt für diesen Plan" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    logStep("Stripe price ID found", { stripeId: planData.stripe_price_id });
 
     // Check if user already has a customer ID
     let customerId;
@@ -117,7 +128,7 @@ serve(async (req) => {
       customer: customerId,
       line_items: [
         {
-          price: planData.stripe_price_id,
+          price: planData.stripe_price_id, // Use the price ID from the database
           quantity: 1,
         },
       ],
