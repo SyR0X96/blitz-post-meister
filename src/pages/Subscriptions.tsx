@@ -60,6 +60,12 @@ const Subscriptions = () => {
   if (!user) {
     return null; // Will redirect in effect
   }
+  
+  // Function to determine if a plan can be subscribed to
+  const isPlanSelectable = (plan: SubscriptionPlan) => {
+    // Free plan cannot be selected manually through Stripe
+    return plan.name !== 'Free'; 
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground py-16">
@@ -72,7 +78,11 @@ const Subscriptions = () => {
               <h2 className="text-xl font-semibold mb-2">Ihr aktuelles Abonnement</h2>
               <div className="flex flex-col space-y-2">
                 <p><strong>Plan:</strong> {subscription.subscription_plans.name}</p>
-                <p><strong>Preis:</strong> {formatPrice(subscription.subscription_plans.price)} / Monat</p>
+                <p><strong>Preis:</strong> {
+                  subscription.subscription_plans.price === 0 
+                    ? 'Kostenlos' 
+                    : `${formatPrice(subscription.subscription_plans.price)} / Monat`
+                }</p>
                 <p>
                   <strong>Monatliches Post-Limit:</strong> {
                     subscription.subscription_plans.monthly_post_limit === -1 
@@ -96,6 +106,7 @@ const Subscriptions = () => {
                     relative flex flex-col p-6 bg-card rounded-lg border-2 transition-all
                     ${selectedPlan === plan.id ? 'border-orange-500 shadow-md' : 'border-border'}
                     ${subscription?.subscription_plans.id === plan.id ? 'ring-2 ring-offset-2 ring-orange-500' : ''}
+                    ${!isPlanSelectable(plan) ? 'opacity-75' : ''}
                   `}
                 >
                   {subscription?.subscription_plans.id === plan.id && (
@@ -105,10 +116,18 @@ const Subscriptions = () => {
                   )}
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold">{plan.name}</h3>
-                    <RadioGroupItem value={plan.id} id={plan.id} className="h-5 w-5" />
+                    {isPlanSelectable(plan) && (
+                      <RadioGroupItem value={plan.id} id={plan.id} className="h-5 w-5" />
+                    )}
                   </div>
                   <div className="text-3xl font-bold mb-4">
-                    {formatPrice(plan.price)}<span className="text-sm font-normal text-muted-foreground"> / Monat</span>
+                    {plan.price === 0 ? (
+                      'Kostenlos'
+                    ) : (
+                      <>
+                        {formatPrice(plan.price)}<span className="text-sm font-normal text-muted-foreground"> / Monat</span>
+                      </>
+                    )}
                   </div>
                   <ul className="space-y-3 mb-6 flex-grow">
                     <li className="flex items-center gap-2">
@@ -128,6 +147,10 @@ const Subscriptions = () => {
                   {subscription?.subscription_plans.id === plan.id ? (
                     <Button variant="outline" className="w-full" disabled>
                       Aktiver Plan
+                    </Button>
+                  ) : !isPlanSelectable(plan) ? (
+                    <Button variant="outline" className="w-full" disabled>
+                      Automatisch bei Registrierung
                     </Button>
                   ) : (
                     <Button

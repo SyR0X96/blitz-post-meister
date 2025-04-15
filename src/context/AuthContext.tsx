@@ -68,10 +68,102 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // New function to assign free plan to new users
+  const assignFreePlanToUser = async (userId: string) => {
+    try {
+      console.log('Checking for free plan assignment for user:', userId);
+      
+      // Check if user already has a subscription
+      const { data: existingSubscription, error: subError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+        
+      if (subError) {
+        console.error('Error checking existing subscription:', subError);
+        return;
+      }
+      
+      // If user already has a subscription, don't assign free plan
+      if (existingSubscription) {
+        console.log('User already has a subscription, skipping free plan assignment');
+        return;
+      }
+      
+      // Find the free plan in subscription_plans table
+      const { data: freePlan, error: planError } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('name', 'Free')
+        .maybeSingle();
+        
+      if (planError) {
+        console.error('Error finding free plan:', planError);
+        return;
+      }
+      
+      if (!freePlan) {
+        console.error('Free plan not found in database');
+        return;
+      }
+      
+      console.log('Found free plan:', freePlan);
+      
+      // Calculate period end date (30 days from now)
+      const currentDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(currentDate.getDate() + 30);
+      
+      // Create subscription for the user with free plan
+      const { error: createError } = await supabase
+        .from('user_subscriptions')
+        .insert({
+          user_id: userId,
+          subscription_plan_id: freePlan.id,
+          status: 'active',
+          current_period_start: currentDate.toISOString(),
+          current_period_end: endDate.toISOString()
+        });
+        
+      if (createError) {
+        console.error('Error creating free plan subscription:', createError);
+        return;
+      }
+      
+      // Create initial usage record with zero count
+      const { error: usageError } = await supabase
+        .from('user_post_usage')
+        .insert({
+          user_id: userId,
+          count: 0,
+          reset_date: endDate.toISOString()
+        });
+        
+      if (usageError) {
+        console.error('Error creating initial usage record:', usageError);
+        return;
+      }
+      
+      console.log('Successfully assigned free plan to user', userId);
+    } catch (error) {
+      console.error('Error in assignFreePlanToUser:', error);
+    }
+  };
+
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
+      
+      // If signup is successful and we have a user, assign free plan
+      if (data && data.user) {
+        // We need a small delay to make sure the user is created in the database
+        setTimeout(() => {
+          assignFreePlanToUser(data.user.id);
+        }, 1000);
+      }
+      
       toast.success('Registrierung erfolgreich! Bitte überprüfe deine E-Mails für den Bestätigungslink.');
     } catch (error: any) {
       if (error.message === 'Failed to fetch') {

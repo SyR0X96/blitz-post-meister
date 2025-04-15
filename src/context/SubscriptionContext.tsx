@@ -44,7 +44,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [usage, setUsage] = useState<Usage | null>(null);
   const [loading, setLoading] = useState(true);
   const [plansLoading, setPlansLoading] = useState(true);
-  const isSubscribed = subscription !== null;
+  // Changed this to check for user existence instead of subscription, since free plan users are also subscribed
+  const isSubscribed = user !== null && subscription !== null; 
   
   // Calculate remaining posts based on subscription limit and usage
   const remainingPosts = React.useMemo(() => {
@@ -93,6 +94,51 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       setLoading(true);
       console.log('Checking subscription status...');
+      
+      // First check if there's a DB-based free plan subscription
+      const { data: dbSubscription, error: dbError } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          id, 
+          status, 
+          current_period_end,
+          subscription_plans (
+            id, 
+            name, 
+            price, 
+            monthly_post_limit
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .single();
+      
+      if (dbError && dbError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+        console.error('Error checking database subscription:', dbError);
+      }
+      
+      // If we found an active subscription in the database
+      if (dbSubscription) {
+        console.log('Found active subscription in database:', dbSubscription);
+        setSubscription(dbSubscription as Subscription);
+        
+        // Get usage data
+        const { data: usageData, error: usageError } = await supabase
+          .from('user_post_usage')
+          .select('count, reset_date')
+          .eq('user_id', user.id)
+          .maybeSingle();
+          
+        if (usageError) {
+          console.error('Error fetching usage data:', usageError);
+        }
+        
+        setUsage(usageData || { count: 0, reset_date: new Date().toISOString() });
+        setLoading(false);
+        return;
+      }
+      
+      // If no DB subscription found, check Stripe subscription via Edge Function
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
