@@ -38,6 +38,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { useSubscription } from "@/context/SubscriptionContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   profilurl: z.string().min(1, { message: "Profil URL ist erforderlich" }),
@@ -49,7 +50,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const PostGenerator = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, session } = useAuth();
   const { subscription, remainingPosts, refreshSubscription, isSubscribed } = useSubscription();
   const navigate = useNavigate();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
@@ -113,6 +114,69 @@ const PostGenerator = () => {
         "https://grevenmedien.app.n8n.cloud/webhook/ee8e17dc-dafa-4327-8f53-cf96b09e128a",
     },
   ];
+
+  // Function to update post usage in the database
+  const updatePostUsage = async () => {
+    if (!user || !session) return;
+    
+    try {
+      console.log("Updating post usage count...");
+      
+      // First get current usage
+      const { data: currentUsage, error: fetchError } = await supabase
+        .from("user_post_usage")
+        .select("id, count")
+        .eq("user_id", user.id)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error("Error fetching post usage:", fetchError);
+        return;
+      }
+      
+      if (currentUsage) {
+        // Update existing usage record
+        const { error: updateError } = await supabase
+          .from("user_post_usage")
+          .update({ 
+            count: currentUsage.count + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", currentUsage.id);
+          
+        if (updateError) {
+          console.error("Error updating post usage:", updateError);
+        } else {
+          console.log("Post usage updated successfully");
+        }
+      } else {
+        // Create a new usage record if one doesn't exist
+        // Set reset date to 30 days from now
+        const resetDate = new Date();
+        resetDate.setDate(resetDate.getDate() + 30);
+        
+        const { error: insertError } = await supabase
+          .from("user_post_usage")
+          .insert({
+            user_id: user.id,
+            count: 1,
+            reset_date: resetDate.toISOString()
+          });
+          
+        if (insertError) {
+          console.error("Error creating post usage:", insertError);
+        } else {
+          console.log("New post usage record created");
+        }
+      }
+      
+      // Refresh subscription to update the UI
+      refreshSubscription();
+      
+    } catch (error) {
+      console.error("Error in updatePostUsage:", error);
+    }
+  };
 
   const onSubmit = async (data: FormValues) => {
     if (!selectedPlatform) {
@@ -186,12 +250,12 @@ const PostGenerator = () => {
         setGeneratedImageUrl(imageUrl);
       }
 
+      // Update usage count after successful post generation
+      await updatePostUsage();
+
       setDialogOpen(true);
       form.reset();
       setSelectedPlatform(null);
-      
-      // Refresh the subscription to update usage
-      refreshSubscription();
     } catch (error) {
       console.error("Error generating post:", error);
       toast.error("Fehler beim Generieren des Posts. Bitte versuche es erneut.");
