@@ -6,10 +6,12 @@ import { useSubscription, SubscriptionPlan } from '@/context/SubscriptionContext
 import { Button } from '@/components/ui/button';
 import { Check, Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Subscriptions = () => {
   const { user, loading: authLoading } = useAuth();
-  const { plans, subscription, subscribeToNewPlan, loading, plansLoading } = useSubscription();
+  const { plans, subscription, subscribeToNewPlan, loading, plansLoading, refreshSubscription } = useSubscription();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
@@ -24,14 +26,127 @@ const Subscriptions = () => {
     setSelectedPlan(planId);
   };
 
-  const handleSubscribe = async () => {
-    if (!selectedPlan) return;
-
+  const activateFreePlan = async (planId: string) => {
+    if (!user) return;
+    
     setIsProcessing(true);
     try {
-      const checkoutUrl = await subscribeToNewPlan(selectedPlan);
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+      // Find the free plan
+      const freePlan = plans.find(plan => plan.id === planId);
+      
+      if (!freePlan || freePlan.name !== 'Free') {
+        toast.error('Ungültiger Plan ausgewählt');
+        return;
+      }
+      
+      // Calculate period end date (30 days from now)
+      const currentDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(currentDate.getDate() + 30);
+      
+      // Check if user already has a subscription
+      const { data: existingSubscription, error: subError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+        
+      if (subError) {
+        console.error('Error checking existing subscription:', subError);
+        toast.error('Fehler beim Überprüfen des aktuellen Abonnements');
+        return;
+      }
+      
+      if (existingSubscription) {
+        // Update existing subscription to free plan
+        const { error: updateError } = await supabase
+          .from('user_subscriptions')
+          .update({
+            subscription_plan_id: planId,
+            status: 'active',
+            current_period_start: currentDate.toISOString(),
+            current_period_end: endDate.toISOString()
+          })
+          .eq('user_id', user.id);
+          
+        if (updateError) {
+          console.error('Error updating subscription to free plan:', updateError);
+          toast.error('Fehler beim Aktualisieren des Abonnements');
+          return;
+        }
+      } else {
+        // Create new subscription for free plan
+        const { error: createError } = await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: user.id,
+            subscription_plan_id: planId,
+            status: 'active',
+            current_period_start: currentDate.toISOString(),
+            current_period_end: endDate.toISOString()
+          });
+          
+        if (createError) {
+          console.error('Error creating free plan subscription:', createError);
+          toast.error('Fehler beim Erstellen des Abonnements');
+          return;
+        }
+      }
+      
+      // Check or create usage record
+      const { data: existingUsage, error: usageError } = await supabase
+        .from('user_post_usage')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+        
+      if (usageError) {
+        console.error('Error checking usage record:', usageError);
+      }
+      
+      if (!existingUsage) {
+        // Create initial usage record with zero count
+        const { error: createUsageError } = await supabase
+          .from('user_post_usage')
+          .insert({
+            user_id: user.id,
+            count: 0,
+            reset_date: endDate.toISOString()
+          });
+          
+        if (createUsageError) {
+          console.error('Error creating initial usage record:', createUsageError);
+        }
+      }
+      
+      // Refresh subscription data
+      await refreshSubscription();
+      toast.success('Free Plan erfolgreich aktiviert');
+      
+    } catch (error) {
+      console.error('Error activating free plan:', error);
+      toast.error('Fehler bei der Aktivierung des Free Plans');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSubscribe = async () => {
+    if (!selectedPlan) return;
+    
+    setIsProcessing(true);
+    try {
+      // Check if selected plan is free plan
+      const selectedPlanData = plans.find(plan => plan.id === selectedPlan);
+      
+      if (selectedPlanData?.name === 'Free') {
+        await activateFreePlan(selectedPlan);
+      } else {
+        // Continue with Stripe checkout for paid plans
+        const checkoutUrl = await subscribeToNewPlan(selectedPlan);
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl;
+        }
       }
     } finally {
       setIsProcessing(false);
@@ -61,10 +176,9 @@ const Subscriptions = () => {
     return null; // Will redirect in effect
   }
   
-  // Function to determine if a plan can be subscribed to
+  // All plans are now selectable
   const isPlanSelectable = (plan: SubscriptionPlan) => {
-    // Free plan cannot be selected manually through Stripe
-    return plan.name !== 'Free'; 
+    return true;
   };
 
   return (
@@ -147,10 +261,6 @@ const Subscriptions = () => {
                   {subscription?.subscription_plans.id === plan.id ? (
                     <Button variant="outline" className="w-full" disabled>
                       Aktiver Plan
-                    </Button>
-                  ) : !isPlanSelectable(plan) ? (
-                    <Button variant="outline" className="w-full" disabled>
-                      Automatisch bei Registrierung
                     </Button>
                   ) : (
                     <Button
