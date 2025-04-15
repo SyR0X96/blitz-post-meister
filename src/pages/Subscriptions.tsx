@@ -34,7 +34,7 @@ const Subscriptions = () => {
       // Find the free plan
       const freePlan = plans.find(plan => plan.id === planId);
       
-      if (!freePlan || freePlan.name !== 'Free') {
+      if (!freePlan || freePlan.price !== 0) {
         toast.error('Ungültiger Plan ausgewählt');
         return;
       }
@@ -139,7 +139,7 @@ const Subscriptions = () => {
       // Check if selected plan is free plan
       const selectedPlanData = plans.find(plan => plan.id === selectedPlan);
       
-      if (selectedPlanData?.name === 'Free') {
+      if (selectedPlanData?.price === 0) {
         await activateFreePlan(selectedPlan);
       } else {
         // Continue with Stripe checkout for paid plans
