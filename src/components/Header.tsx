@@ -7,7 +7,7 @@ const Header = () => {
   return (
     <header className="bg-background border-b">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold text-primary">BlitzPostMeister</Link>
+        <Link to="/" className="text-2xl font-bold text-primary">GrevenMedien PostGenerator</Link>
         <div className="flex items-center space-x-4">
           <nav>
             <ul className="flex space-x-4">
