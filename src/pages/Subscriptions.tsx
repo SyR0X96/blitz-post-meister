@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription, SubscriptionPlan } from '@/context/SubscriptionContext';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Gift, Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,7 +30,6 @@ const Subscriptions = () => {
     
     setIsProcessing(true);
     try {
-      // Find the free plan
       const freePlan = plans.find(plan => plan.id === planId);
       
       if (!freePlan || freePlan.price !== 0) {
@@ -39,12 +37,10 @@ const Subscriptions = () => {
         return;
       }
       
-      // Calculate period end date (30 days from now)
       const currentDate = new Date();
       const endDate = new Date();
       endDate.setDate(currentDate.getDate() + 30);
       
-      // Check if user already has a subscription
       const { data: existingSubscription, error: subError } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -58,7 +54,6 @@ const Subscriptions = () => {
       }
       
       if (existingSubscription) {
-        // Update existing subscription to free plan
         const { error: updateError } = await supabase
           .from('user_subscriptions')
           .update({
@@ -75,7 +70,6 @@ const Subscriptions = () => {
           return;
         }
       } else {
-        // Create new subscription for free plan
         const { error: createError } = await supabase
           .from('user_subscriptions')
           .insert({
@@ -93,7 +87,6 @@ const Subscriptions = () => {
         }
       }
       
-      // Check or create usage record
       const { data: existingUsage, error: usageError } = await supabase
         .from('user_post_usage')
         .select('*')
@@ -105,7 +98,6 @@ const Subscriptions = () => {
       }
       
       if (!existingUsage) {
-        // Create initial usage record with zero count
         const { error: createUsageError } = await supabase
           .from('user_post_usage')
           .insert({
@@ -119,7 +111,6 @@ const Subscriptions = () => {
         }
       }
       
-      // Refresh subscription data
       await refreshSubscription();
       toast.success('Free Plan erfolgreich aktiviert');
       
@@ -136,13 +127,11 @@ const Subscriptions = () => {
     
     setIsProcessing(true);
     try {
-      // Check if selected plan is free plan
       const selectedPlanData = plans.find(plan => plan.id === selectedPlan);
       
       if (selectedPlanData?.price === 0) {
         await activateFreePlan(selectedPlan);
       } else {
-        // Continue with Stripe checkout for paid plans
         const checkoutUrl = await subscribeToNewPlan(selectedPlan);
         if (checkoutUrl) {
           window.location.href = checkoutUrl;
@@ -153,12 +142,10 @@ const Subscriptions = () => {
     }
   };
 
-  // Function to format price in euros
   const formatPrice = (price: number) => {
     return `${(price / 100).toFixed(2)}€`;
   };
   
-  // Function to format post limit
   const formatPostLimit = (limit: number) => {
     return limit === -1 ? 'Unbegrenzt' : limit;
   };
@@ -176,7 +163,6 @@ const Subscriptions = () => {
     return null; // Will redirect in effect
   }
   
-  // All plans are now selectable
   const isPlanSelectable = (plan: SubscriptionPlan) => {
     return true;
   };
@@ -229,7 +215,10 @@ const Subscriptions = () => {
                     </div>
                   )}
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold">{plan.name}</h3>
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      {plan.name === 'Free' && <Gift className="h-5 w-5 text-green-500" />}
+                      {plan.name}
+                    </h3>
                     {isPlanSelectable(plan) && (
                       <RadioGroupItem value={plan.id} id={plan.id} className="h-5 w-5" />
                     )}
@@ -267,7 +256,7 @@ const Subscriptions = () => {
                       className="w-full bg-orange-500 hover:bg-orange-600"
                       onClick={() => handleSelectPlan(plan.id)}
                     >
-                      Auswählen
+                      {plan.price === 0 ? 'Kostenlos aktivieren' : 'Auswählen'}
                     </Button>
                   )}
                 </div>
