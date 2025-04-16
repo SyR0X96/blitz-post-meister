@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +11,7 @@ import PostGenerator from "./pages/PostGenerator";
 import Subscriptions from "./pages/Subscriptions";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import Header from "./components/Header";
+import SavedPosts from "./pages/SavedPosts";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +29,7 @@ const App = () => (
               <Route path="/post-generator" element={<PostGenerator />} />
               <Route path="/subscriptions" element={<Subscriptions />} />
               <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+              <Route path="/saved-posts" element={<SavedPosts />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

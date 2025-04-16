@@ -1,23 +1,13 @@
 
-import React from 'react';
+// Add an import for Archive icon
+import { Archive } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Logo from './Logo';
-import UserProfile from './UserProfile';
 
-const Header: React.FC = () => {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b">
-      <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <Link to="/" className="flex items-center">
-          <Logo className="text-xl" />
-        </Link>
-
-        <div className="flex items-center gap-4">
-          <UserProfile />
-        </div>
-      </div>
-    </header>
-  );
-};
-
-export default Header;
+// Inside the UserProfile section, add a link to saved posts
+<Link 
+  to="/saved-posts" 
+  className="flex items-center hover:bg-secondary rounded-md p-2 transition-colors"
+>
+  <Archive className="h-5 w-5 mr-2" />
+  Gespeicherte Posts
+</Link>

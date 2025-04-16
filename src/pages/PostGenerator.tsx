@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -252,6 +251,31 @@ const PostGenerator = () => {
 
       // Update usage count after successful post generation
       await updatePostUsage();
+
+      const savePost = async () => {
+        if (!user || !selectedPlatform) return;
+      
+        try {
+          const { error } = await supabase
+            .from('saved_posts')
+            .insert({
+              user_id: user.id,
+              platform: selectedPlatform,
+              post_text: generatedPost || '',
+              image_url: generatedImageUrl
+            });
+      
+          if (error) throw error;
+          
+          toast.success('Post wurde gespeichert');
+        } catch (error) {
+          console.error('Error saving post:', error);
+          toast.error('Fehler beim Speichern des Posts');
+        }
+      };
+      
+      // Call savePost() right after updatePostUsage() in the onSubmit function
+      await savePost();
 
       setDialogOpen(true);
       form.reset();
