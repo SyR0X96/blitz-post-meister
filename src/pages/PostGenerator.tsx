@@ -58,7 +58,6 @@ const PostGenerator = () => {
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Check if user is authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       toast.error("Bitte melde dich an, um Posts zu generieren");
@@ -66,7 +65,6 @@ const PostGenerator = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Check if user has a subscription
   useEffect(() => {
     if (!authLoading && user && !isSubscribed) {
       navigate('/subscriptions');
@@ -114,14 +112,12 @@ const PostGenerator = () => {
     },
   ];
 
-  // Function to update post usage in the database
   const updatePostUsage = async () => {
     if (!user || !session) return;
     
     try {
       console.log("Updating post usage count...");
       
-      // First get current usage
       const { data: currentUsage, error: fetchError } = await supabase
         .from("user_post_usage")
         .select("id, count")
@@ -134,7 +130,6 @@ const PostGenerator = () => {
       }
       
       if (currentUsage) {
-        // Update existing usage record
         const { error: updateError } = await supabase
           .from("user_post_usage")
           .update({ 
@@ -149,8 +144,6 @@ const PostGenerator = () => {
           console.log("Post usage updated successfully");
         }
       } else {
-        // Create a new usage record if one doesn't exist
-        // Set reset date to 30 days from now
         const resetDate = new Date();
         resetDate.setDate(resetDate.getDate() + 30);
         
@@ -169,7 +162,6 @@ const PostGenerator = () => {
         }
       }
       
-      // Refresh subscription to update the UI
       refreshSubscription();
       
     } catch (error) {
@@ -249,33 +241,30 @@ const PostGenerator = () => {
         setGeneratedImageUrl(imageUrl);
       }
 
-      // Update usage count after successful post generation
       await updatePostUsage();
 
-      const savePost = async () => {
-        if (!user || !selectedPlatform) return;
-      
+      if (user) {
         try {
           const { error } = await supabase
             .from('saved_posts')
             .insert({
               user_id: user.id,
               platform: selectedPlatform,
-              post_text: generatedPost || '',
-              image_url: generatedImageUrl
+              post_text: extractedText,
+              image_url: imageUrl
             });
-      
-          if (error) throw error;
+
+          if (error) {
+            console.error('Error saving post to database:', error);
+            throw error;
+          }
           
           toast.success('Post wurde gespeichert');
         } catch (error) {
           console.error('Error saving post:', error);
           toast.error('Fehler beim Speichern des Posts');
         }
-      };
-      
-      // Call savePost() right after updatePostUsage() in the onSubmit function
-      await savePost();
+      }
 
       setDialogOpen(true);
       form.reset();
@@ -317,8 +306,7 @@ const PostGenerator = () => {
         });
     }, 100);
   };
-  
-  // If loading authentication state, show spinner
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -328,7 +316,6 @@ const PostGenerator = () => {
     );
   }
 
-  // If not authenticated, don't render the component (useEffect will redirect)
   if (!user || !isSubscribed) {
     return null;
   }
@@ -348,7 +335,6 @@ const PostGenerator = () => {
             Wähle eine Plattform und gib deine Details ein, um einen professionellen Social Media Post zu generieren.
           </p>
 
-          {/* Subscription Info Alert */}
           <Alert className="mb-6 bg-orange-500/10 border-orange-500">
             <AlertTitle className="flex items-center">
               <AlertCircle className="h-4 w-4 mr-2" /> 

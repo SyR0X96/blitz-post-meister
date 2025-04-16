@@ -15,7 +15,8 @@ import {
   Archive, 
   Loader2, 
   Image as ImageIcon, 
-  Trash 
+  Trash,
+  Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -51,6 +52,7 @@ const SavedPosts = () => {
 
         if (error) throw error;
 
+        console.log('Fetched saved posts:', data);
         setSavedPosts(data || []);
       } catch (error) {
         console.error('Error fetching saved posts:', error);
@@ -97,7 +99,7 @@ const SavedPosts = () => {
   return (
     <div className="min-h-screen bg-background text-foreground py-16">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-center mb-8">
+        <h1 className="text-3xl font-bold text-center mb-8 flex items-center justify-center">
           <Archive className="inline-block mr-3 h-8 w-8" />
           Gespeicherte Posts
         </h1>
@@ -112,7 +114,7 @@ const SavedPosts = () => {
               <Card key={post.id} className="flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
-                    {post.platform}
+                    <span className="capitalize">{post.platform}</span>
                     <Button 
                       variant="destructive" 
                       size="icon" 
@@ -123,7 +125,11 @@ const SavedPosts = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <p className="whitespace-pre-wrap">{post.post_text}</p>
+                  {post.post_text ? (
+                    <p className="whitespace-pre-wrap mb-4">{post.post_text}</p>
+                  ) : (
+                    <p className="text-muted-foreground mb-4 italic">Kein Posttext vorhanden</p>
+                  )}
                   {post.image_url && (
                     <div className="mt-4">
                       <img 
@@ -137,16 +143,19 @@ const SavedPosts = () => {
                 <CardFooter className="flex justify-between">
                   <Button 
                     variant="outline" 
+                    className="flex items-center gap-2"
                     onClick={() => handleCopyPost(post.post_text)}
                   >
+                    <Copy className="h-4 w-4" />
                     Post kopieren
                   </Button>
                   {post.image_url && (
                     <Button 
                       variant="secondary" 
+                      className="flex items-center gap-2"
                       onClick={() => window.open(post.image_url!, '_blank')}
                     >
-                      <ImageIcon className="h-4 w-4 mr-2" /> Bild öffnen
+                      <ImageIcon className="h-4 w-4" /> Bild öffnen
                     </Button>
                   )}
                 </CardFooter>
@@ -160,4 +169,3 @@ const SavedPosts = () => {
 };
 
 export default SavedPosts;
-
