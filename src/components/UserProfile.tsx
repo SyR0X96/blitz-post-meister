@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { LogOut, User, WifiOff, CreditCard } from 'lucide-react';
+import { LogOut, User, WifiOff, CreditCard, Archive } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useSubscription } from '@/context/SubscriptionContext';
 import {
@@ -74,6 +74,13 @@ const UserProfile: React.FC = () => {
             className="cursor-pointer"
           >
             Post Generator
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => navigate('/saved-posts')}
+            className="cursor-pointer flex items-center"
+          >
+            <Archive className="mr-2 h-4 w-4" />
+            Gespeicherte Posts
           </DropdownMenuItem>
           <DropdownMenuItem 
             onClick={() => navigate('/subscriptions')}
