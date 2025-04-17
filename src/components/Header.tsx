@@ -19,15 +19,6 @@ const Header = () => {
                   Post Generator
                 </Link>
               </li>
-              <li>
-                <Link 
-                  to="/saved-posts" 
-                  className="hover:text-primary transition-colors flex items-center"
-                >
-                  <Archive className="h-4 w-4 mr-1" />
-                  Gespeicherte Posts
-                </Link>
-              </li>
             </ul>
           </nav>
           <UserProfile />

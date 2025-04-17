@@ -40,7 +40,6 @@ export type Database = {
           image_url: string | null
           platform: string
           post_text: string
-          tags: string[] | null
           user_id: string
         }
         Insert: {
@@ -49,7 +48,6 @@ export type Database = {
           image_url?: string | null
           platform: string
           post_text: string
-          tags?: string[] | null
           user_id: string
         }
         Update: {
@@ -58,7 +56,6 @@ export type Database = {
           image_url?: string | null
           platform?: string
           post_text?: string
-          tags?: string[] | null
           user_id?: string
         }
         Relationships: []
