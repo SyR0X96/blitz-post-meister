@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,7 +53,7 @@ type SavedPost = {
   post_text: string;
   image_url: string | null;
   created_at: string;
-  tags?: string[];
+  tags: string[] | null;
 };
 
 type FilterFormValues = {
