@@ -87,7 +87,7 @@ const PostGenerator = () => {
       name: "LinkedIn",
       icon: <Linkedin className="h-6 w-6" />,
       webhook:
-        "https://grevenmedien.app.n8n.cloud/webhook-test/b81511aa-f625-46e5-9f73-5d3e80ed5e02",
+        "https://n8n.greven.de/webhook/b81511aa-f625-46e5-9f73-5d3e80ed5e02",
     },
     {
       id: "instagram",
