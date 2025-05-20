@@ -35,33 +35,34 @@ const SavedPosts = () => {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const fetchSavedPosts = async () => {
+    if (!user) return;
+
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('saved_posts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      console.log('Fetched saved posts:', data);
+      setSavedPosts(data || []);
+    } catch (error) {
+      console.error('Error fetching saved posts:', error);
+      toast.error('Fehler beim Laden der gespeicherten Posts');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/');
       return;
     }
-
-    const fetchSavedPosts = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('saved_posts')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        console.log('Fetched saved posts:', data);
-        setSavedPosts(data || []);
-      } catch (error) {
-        console.error('Error fetching saved posts:', error);
-        toast.error('Fehler beim Laden der gespeicherten Posts');
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
     fetchSavedPosts();
   }, [user, authLoading, navigate]);
@@ -78,56 +79,26 @@ const SavedPosts = () => {
       console.log(`Attempting to delete post with ID: ${postId}`);
       console.log(`Current user ID: ${user.id}`);
       
-      // First check if the post exists and belongs to the user
-      const { data: postData, error: checkError } = await supabase
-        .from('saved_posts')
-        .select('id')
-        .eq('id', postId)
-        .eq('user_id', user.id)
-        .single();
-      
-      if (checkError) {
-        console.error('Error checking post ownership:', checkError);
-        toast.error('Post konnte nicht gefunden werden oder gehört einem anderen Benutzer');
-        return;
-      }
-      
-      if (!postData) {
-        console.warn('Post not found or does not belong to user');
-        toast.error('Post konnte nicht gefunden werden oder gehört einem anderen Benutzer');
-        return;
-      }
-      
-      // If post exists and belongs to user, proceed with deletion
-      const { error: deleteError } = await supabase
+      // Delete directly - simplified approach
+      const { error } = await supabase
         .from('saved_posts')
         .delete()
         .eq('id', postId);
       
-      if (deleteError) {
-        console.error('Error deleting post:', deleteError);
-        toast.error('Fehler beim Löschen des Posts: ' + deleteError.message);
+      if (error) {
+        console.error('Error deleting post:', error);
+        toast.error('Fehler beim Löschen des Posts: ' + error.message);
         return;
       }
       
-      // Only update UI after successful deletion
-      setSavedPosts(posts => posts.filter(post => post.id !== postId));
+      // Force a complete refresh after deletion
+      await fetchSavedPosts();
       toast.success('Post erfolgreich gelöscht');
       console.log(`Successfully deleted post with ID: ${postId}`);
     } catch (error) {
       console.error('Error during post deletion:', error);
       toast.error('Fehler beim Löschen des Posts');
     } finally {
-      // Refresh posts list from server to ensure UI is in sync with database
-      if (user) {
-        const { data } = await supabase
-          .from('saved_posts')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        
-        setSavedPosts(data || []);
-      }
       setIsDeleting(null);
     }
   };
