@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,72 +66,57 @@ const SavedPosts = () => {
   }, [user, authLoading, navigate]);
 
   const handleDeletePost = async (postId: string) => {
+    if (!user) {
+      toast.error('Du musst angemeldet sein, um Posts zu löschen');
+      return;
+    }
+
     try {
-      // Set the post as currently being deleted to prevent multiple deletion attempts
       setIsDeleting(postId);
       
-      // Optimistically update UI by removing the post from the local list
-      setSavedPosts(posts => posts.filter(post => post.id !== postId));
-      
+      // Do not update UI optimistically - wait for confirmation first
       console.log(`Attempting to delete post with ID: ${postId}`);
-      console.log(`Current user ID: ${user?.id}`);
+      console.log(`Current user ID: ${user.id}`);
       
-      // Perform database deletion with explicit debugging
+      // Directly use eq for each parameter separately instead of match
       const { error, count } = await supabase
         .from('saved_posts')
-        .delete({ count: 'exact' }) // Add count to see how many rows were affected
-        .match({ 
-          'id': postId, 
-          'user_id': user?.id 
-        });
+        .delete({ count: 'exact' })
+        .eq('id', postId)
+        .eq('user_id', user.id);
       
       console.log(`Deletion response - Count: ${count}, Error:`, error);
       
       if (error) {
         console.error('Database error when deleting post:', error);
         toast.error('Fehler beim Löschen des Posts: ' + error.message);
-        
-        // Reload posts to restore correct state
-        const { data } = await supabase
-          .from('saved_posts')
-          .select('*')
-          .eq('user_id', user?.id)
-          .order('created_at', { ascending: false });
-        
-        setSavedPosts(data || []);
         return;
       }
       
       if (count === 0) {
         console.warn('No posts were deleted. Post might not exist or belong to another user.');
         toast.error('Post konnte nicht gefunden werden oder gehört einem anderen Benutzer');
-        
-        // Reload posts to get current state
-        const { data } = await supabase
-          .from('saved_posts')
-          .select('*')
-          .eq('user_id', user?.id)
-          .order('created_at', { ascending: false });
-        
-        setSavedPosts(data || []);
         return;
       }
       
+      // Only remove from UI after successful deletion
+      setSavedPosts(posts => posts.filter(post => post.id !== postId));
       console.log(`Successfully deleted post with ID: ${postId}`);
       toast.success('Post erfolgreich gelöscht');
     } catch (error) {
       console.error('Error during post deletion:', error);
       toast.error('Fehler beim Löschen des Posts');
-      
-      // Reload posts to restore correct state
-      const { data } = await supabase
-        .from('saved_posts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-      
-      setSavedPosts(data || []);
     } finally {
+      // Always fetch the latest data after a delete attempt
+      if (user) {
+        const { data } = await supabase
+          .from('saved_posts')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        setSavedPosts(data || []);
+      }
       setIsDeleting(null);
     }
   };
