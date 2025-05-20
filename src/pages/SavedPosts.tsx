@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,40 +75,50 @@ const SavedPosts = () => {
     try {
       setIsDeleting(postId);
       
-      // Do not update UI optimistically - wait for confirmation first
       console.log(`Attempting to delete post with ID: ${postId}`);
       console.log(`Current user ID: ${user.id}`);
       
-      // Directly use eq for each parameter separately instead of match
-      const { error, count } = await supabase
+      // First check if the post exists and belongs to the user
+      const { data: postData, error: checkError } = await supabase
         .from('saved_posts')
-        .delete({ count: 'exact' })
+        .select('id')
         .eq('id', postId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .single();
       
-      console.log(`Deletion response - Count: ${count}, Error:`, error);
-      
-      if (error) {
-        console.error('Database error when deleting post:', error);
-        toast.error('Fehler beim Löschen des Posts: ' + error.message);
-        return;
-      }
-      
-      if (count === 0) {
-        console.warn('No posts were deleted. Post might not exist or belong to another user.');
+      if (checkError) {
+        console.error('Error checking post ownership:', checkError);
         toast.error('Post konnte nicht gefunden werden oder gehört einem anderen Benutzer');
         return;
       }
       
-      // Only remove from UI after successful deletion
+      if (!postData) {
+        console.warn('Post not found or does not belong to user');
+        toast.error('Post konnte nicht gefunden werden oder gehört einem anderen Benutzer');
+        return;
+      }
+      
+      // If post exists and belongs to user, proceed with deletion
+      const { error: deleteError } = await supabase
+        .from('saved_posts')
+        .delete()
+        .eq('id', postId);
+      
+      if (deleteError) {
+        console.error('Error deleting post:', deleteError);
+        toast.error('Fehler beim Löschen des Posts: ' + deleteError.message);
+        return;
+      }
+      
+      // Only update UI after successful deletion
       setSavedPosts(posts => posts.filter(post => post.id !== postId));
-      console.log(`Successfully deleted post with ID: ${postId}`);
       toast.success('Post erfolgreich gelöscht');
+      console.log(`Successfully deleted post with ID: ${postId}`);
     } catch (error) {
       console.error('Error during post deletion:', error);
       toast.error('Fehler beim Löschen des Posts');
     } finally {
-      // Always fetch the latest data after a delete attempt
+      // Refresh posts list from server to ensure UI is in sync with database
       if (user) {
         const { data } = await supabase
           .from('saved_posts')
