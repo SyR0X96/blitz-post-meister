@@ -32,6 +32,7 @@ const SavedPosts = () => {
   const { user, loading: authLoading } = useAuth();
   const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,20 +68,31 @@ const SavedPosts = () => {
 
   const handleDeletePost = async (postId: string) => {
     try {
-      // Optimistisch UI-Update: Post aus der lokalen Liste entfernen
+      // Set the post as currently being deleted to prevent multiple deletion attempts
+      setIsDeleting(postId);
+      
+      // Optimistically update UI by removing the post from the local list
       setSavedPosts(posts => posts.filter(post => post.id !== postId));
       
-      // Durchführen des Löschvorgangs in der Datenbank
-      const { error } = await supabase
+      console.log(`Attempting to delete post with ID: ${postId}`);
+      console.log(`Current user ID: ${user?.id}`);
+      
+      // Perform database deletion with explicit debugging
+      const { error, count } = await supabase
         .from('saved_posts')
-        .delete()
-        .eq('id', postId)
-        .eq('user_id', user?.id); // Wichtig: Sicherstellen, dass nur eigene Posts gelöscht werden können
+        .delete({ count: 'exact' }) // Add count to see how many rows were affected
+        .match({ 
+          'id': postId, 
+          'user_id': user?.id 
+        });
+      
+      console.log(`Deletion response - Count: ${count}, Error:`, error);
       
       if (error) {
-        // Bei Fehler den Post wieder zur Liste hinzufügen und Fehler anzeigen
-        console.error('Error deleting post:', error);
-        // Erneut Posts laden, um den aktuellen Zustand zu erhalten
+        console.error('Database error when deleting post:', error);
+        toast.error('Fehler beim Löschen des Posts: ' + error.message);
+        
+        // Reload posts to restore correct state
         const { data } = await supabase
           .from('saved_posts')
           .select('*')
@@ -88,14 +100,40 @@ const SavedPosts = () => {
           .order('created_at', { ascending: false });
         
         setSavedPosts(data || []);
-        toast.error('Fehler beim Löschen des Posts');
         return;
       }
       
+      if (count === 0) {
+        console.warn('No posts were deleted. Post might not exist or belong to another user.');
+        toast.error('Post konnte nicht gefunden werden oder gehört einem anderen Benutzer');
+        
+        // Reload posts to get current state
+        const { data } = await supabase
+          .from('saved_posts')
+          .select('*')
+          .eq('user_id', user?.id)
+          .order('created_at', { ascending: false });
+        
+        setSavedPosts(data || []);
+        return;
+      }
+      
+      console.log(`Successfully deleted post with ID: ${postId}`);
       toast.success('Post erfolgreich gelöscht');
     } catch (error) {
       console.error('Error during post deletion:', error);
       toast.error('Fehler beim Löschen des Posts');
+      
+      // Reload posts to restore correct state
+      const { data } = await supabase
+        .from('saved_posts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+      
+      setSavedPosts(data || []);
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -134,10 +172,15 @@ const SavedPosts = () => {
                     <span className="capitalize">{post.platform}</span>
                     <Button 
                       variant="destructive" 
-                      size="icon" 
+                      size="icon"
+                      disabled={isDeleting === post.id}
                       onClick={() => handleDeletePost(post.id)}
                     >
-                      <Trash className="h-4 w-4" />
+                      {isDeleting === post.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash className="h-4 w-4" />
+                      )}
                     </Button>
                   </CardTitle>
                 </CardHeader>
