@@ -67,17 +67,34 @@ const SavedPosts = () => {
 
   const handleDeletePost = async (postId: string) => {
     try {
+      // Optimistisch UI-Update: Post aus der lokalen Liste entfernen
+      setSavedPosts(posts => posts.filter(post => post.id !== postId));
+      
+      // Durchführen des Löschvorgangs in der Datenbank
       const { error } = await supabase
         .from('saved_posts')
         .delete()
-        .eq('id', postId);
-
-      if (error) throw error;
-
-      setSavedPosts(posts => posts.filter(post => post.id !== postId));
+        .eq('id', postId)
+        .eq('user_id', user?.id); // Wichtig: Sicherstellen, dass nur eigene Posts gelöscht werden können
+      
+      if (error) {
+        // Bei Fehler den Post wieder zur Liste hinzufügen und Fehler anzeigen
+        console.error('Error deleting post:', error);
+        // Erneut Posts laden, um den aktuellen Zustand zu erhalten
+        const { data } = await supabase
+          .from('saved_posts')
+          .select('*')
+          .eq('user_id', user?.id)
+          .order('created_at', { ascending: false });
+        
+        setSavedPosts(data || []);
+        toast.error('Fehler beim Löschen des Posts');
+        return;
+      }
+      
       toast.success('Post erfolgreich gelöscht');
     } catch (error) {
-      console.error('Error deleting post:', error);
+      console.error('Error during post deletion:', error);
       toast.error('Fehler beim Löschen des Posts');
     }
   };
